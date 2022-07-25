@@ -1,0 +1,129 @@
+---
+title: "CCT"
+output: html_document
+date: '2022-07-25'
+---
+
+```{r}
+library(COVID19)  # load the package
+library(tidyverse)
+#x <- covid19()    # download the data
+
+x <- covid19(country = c("South Africa"), level = 1)
+
+```
+
+```{r}
+x_daily <- x %>%
+  mutate(daily_count = c(confirmed[1], diff(confirmed)))%>%
+   mutate(daily_deaths = c(deaths[1], diff(deaths)))
+   
+
+  x_daily_levels <- x_daily %>%
+  mutate(Level = case_when(between(date, as.Date("2020-02-07"), as.Date("2020-03-25"))~ "0",
+                           between(date, as.Date("2020-03-26"), as.Date("2020-04-30"))~ "5",
+                           between(date, as.Date("2020-05-01"), as.Date("2020-05-31"))~ "4",
+                           between(date, as.Date("2020-06-01"), as.Date("2020-08-17"))~ "3",
+                           between(date, as.Date("2020-08-18"), as.Date("2020-09-20"))~ "2",
+                           between(date, as.Date("2020-09-21"), as.Date("2020-12-28"))~ "1",
+                           between(date, as.Date("2020-12-29"), as.Date("2021-02-28"))~ "3",
+                           between(date, as.Date("2021-03-01"), as.Date("2021-05-31"))~ "1",
+                           between(date, as.Date("2021-05-31"), as.Date("2021-06-15"))~ "2",
+                           between(date, as.Date("2021-06-16"), as.Date("2021-06-27"))~ "3",
+                           between(date, as.Date("2021-06-28"), as.Date("2021-07-25"))~ "4",
+                           between(date, as.Date("2021-07-26"), as.Date("2021-09-12"))~ "3",
+                           between(date, as.Date("2021-09-13"), as.Date("2021-09-30"))~ "2",
+                           between(date, as.Date("2021-10-01"), as.Date("2022-04-05"))~ "1",
+                           between(date, as.Date("2022-04-05"), as.Date("2022-07-23"))~ "0"
+        
+                           ))%>%
+    mutate(Color=case_when(Level == "5"~ "red",
+            Level == "4"~ "orange",
+            Level == "3"~ "yellow",
+            Level == "2"~ "blue",
+            Level == "1"~ "green",
+            Level == "0"~ "white"))
+```
+
+```{r}
+
+p1<- ggplot(x_daily_levels, aes(date)) +
+  geom_tile(aes(fill = Level, y = 1,), height = Inf, alpha=0.2) +
+    geom_line(aes(y = daily_count), colour = "black")+
+    scale_x_date(date_breaks = "months" , date_labels = "%b-%y")+
+    scale_fill_manual(values = c("white", "green", "blue", "yellow", "orange","red"))+
+    xlab("") + ylab("COVID-19 cases")+
+    geom_vline(xintercept = as.numeric(as.Date("2020-03-26"))
+               , linetype="dotted", size = 1)+
+  
+  geom_text(aes(x = as.Date('2020-04-06'),y=29000,label = "First lockdown", angle=90))+
+  
+    geom_vline(xintercept = as.numeric(as.Date("2020-05-01"))
+               , linetype="dotted", size = 1)+
+  
+  geom_text(aes(x = as.Date('2020-05-09'),y=29000,label = "Beta variant", angle=90))+
+  
+  geom_vline(xintercept = as.numeric(as.Date("2022-04-05"))
+               , linetype="dotted", size = 1)+
+  
+  
+  geom_text(aes(x = as.Date('2022-04-16'),y=29000,label = "State of disaster lifted", angle=90))+
+  
+  geom_vline(xintercept = as.numeric(as.Date("2021-11-24"))
+               , linetype="dotted", size = 1)+
+  
+    geom_text(aes(x = as.Date('2021-12-03'),y=29000,label = "Omicron", angle=90))+
+
+
+  theme_bw()+
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+   labs(fill='Alert level') 
+
+p2<-ggplot(x_daily_levels, aes(date)) +
+  geom_tile(aes(fill = Level, y = 1,), height = Inf, alpha=0.2) +
+    geom_line(aes(y = daily_deaths), colour = "black")+
+    scale_x_date(date_breaks = "months" , date_labels = "%b-%y")+
+    scale_fill_manual(values = c("white", "green", "blue", "yellow", "orange","red"))+
+    xlab("Date") + ylab("COVID-19 deaths")+
+    geom_vline(xintercept = as.numeric(as.Date("2020-03-26"))
+               , linetype="dotted", size = 1)+
+  
+  geom_text(aes(x = as.Date('2020-04-06'),y=600,label = "First lockdown", angle=90))+
+  
+    
+  geom_vline(xintercept = as.numeric(as.Date("2020-05-01"))
+               , linetype="dotted", size = 1)+
+  
+  geom_text(aes(x = as.Date('2020-05-09'),y=600,label = "Beta variant", angle=90))+
+  
+    
+  geom_vline(xintercept = as.numeric(as.Date("2021-11-24"))
+               , linetype="dotted", size = 1)+
+  
+  geom_text(aes(x = as.Date('2021-12-03'),y=600,label = "Omicron", angle=90))+
+
+  
+  geom_vline(xintercept = as.numeric(as.Date("2022-04-05"))
+               , linetype="dotted", size = 1)+
+  
+  geom_text(aes(x = as.Date('2022-04-16'),y=600,label = "State of disaster lifted", angle=90))+
+  
+#  geom_text(aes(x="2020-03-12", label="\nPAFTA", y=9), colour="red", angle=90) +
+  theme_bw()+
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+   labs(fill='Alert level') 
+```
+
+```{r}
+library(cowplot)
+output<-plot_grid(p1, p2, labels = c('A', 'B'), 
+                  label_size = 10, ncol=1,
+                    align="hv")
+
+output
+
+ggsave("COVID_SA.png", plot = output, width = 30, height = 20, units = "cm")
+
+```
+
+
